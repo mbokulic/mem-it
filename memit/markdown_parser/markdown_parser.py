@@ -39,9 +39,6 @@ def _get_markdown_structure(md_string):
         else:
             content = None
 
-        # import pdb
-        # pdb.set_trace()
-
         heading_data = {
             'title': title if title else None,
             'content': content if content else None,
@@ -100,26 +97,14 @@ def _split_content(md_string):
     if has_headings:
         result['content'] = content[:has_headings.start()]
         result['rest'] = content[has_headings.start():]
+        result['rest'] = result['rest'].lstrip()
     else:
         result['content'] = content
         result['rest'] = None
 
     result['content'] = result['content'].strip()
-    result['rest'] = result['rest'].lstrip()
 
     return result
-
-
-'''general ideas
-
- - basic markdown parsing:
-    - split into headings with same level
-    - split heading into content and headings of lower level (if they exist)
- - I made it simple now, but each toplevel can have a description text before
-   other headings
-
-'''
-
 
 
 if __name__ == '__main__':
