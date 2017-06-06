@@ -1,7 +1,7 @@
 import unittest
-import memit.markdown_parser.markdown_parser as parser
+import memit.markdown_parser.markdown_parsing as parser
 
-headings_1 = \
+section_1 = \
 '''## heading 1
 Heading 1 content. One row.
 
@@ -17,12 +17,11 @@ Text
 '''
 
 
-
-class Split_headings_test(unittest.TestCase):
+class Split_sections_test(unittest.TestCase):
 
     def test_1(self):
 
-        result = parser._split_headings(headings_1)
+        result = parser._split_sections(section_1)
         truth = [
             '## heading 1\nHeading 1 content. One row.\n\n### subheading\nSome'
             ' text.\n\nOther text one row apart.\n',
