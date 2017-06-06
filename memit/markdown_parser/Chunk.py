@@ -1,4 +1,7 @@
-'''Chunks exclude one another
+'''A chunk is a class that takes markdown section content as input. From this
+content it extracts a "chunk" of text that is relevant for some purpose.
+
+Chunks exclude one another
 '''
 
 import re
@@ -9,6 +12,10 @@ class Chunk(abc.ABC):
 
     @abc.abstractmethod
     def __str__(self):
+        pass
+
+    @abc.abstractmethod
+    def to_JSON(self):
         pass
 
     @classmethod

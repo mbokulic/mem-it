@@ -1,14 +1,5 @@
-'''functions for parsing markdown files into a structure ready for ingestion by
-the memory app
-'''
-
-import logging
-import re
 import json
-import memit.markdown_parser.Terminal_node as tn
-
-
-log = logging.getLogger('memit.markdown_parser')
+import re
 
 
 def parse_markdown(path):
@@ -16,8 +7,27 @@ def parse_markdown(path):
         md_string = file.read()
 
         x = _get_markdown_structure(md_string)
-        return json.dumps(_get_markdown_structure(md_string),
-                          default=lambda o: o.to_JSON())
+        return json.dumps(x, default=lambda o: o.to_JSON())
+
+
+def _get_markdown_structure(md_string):
+
+    result = []
+    sections = _split_sections(md_string)
+
+    for section in sections:
+        section_content = _split_content(section)
+
+        section_data = {
+            'title': section_content['title'],
+            'content': section_content['content'],
+            'children': _get_markdown_structure(section_content['rest']) if
+            section_content['rest'] else None
+        }
+
+        result.append(section_data)
+
+    return result
 
 
 def _find_highest_h(md_string):
@@ -28,35 +38,7 @@ def _find_highest_h(md_string):
     return(min(counts))
 
 
-def _get_markdown_structure(md_string):
-
-    result = []
-    for heading in split_str:
-        title = _get_title(heading)
-        content, subh = _split_content(heading)
-        if tn.Code_chunk.test(content):
-            content = tn.Code_chunk(content)
-        else:
-            content = None
-
-        heading_data = {
-            'title': title if title else None,
-            'content': content if content else None,
-            'children': _get_markdown_structure(subh) if subh else None
-        }
-
-        result.append(heading_data)
-
-    return result
-
-
-def _get_title(md_string):
-    match = re.search('\\n', md_string)
-    title = md_string[:match.start()] if match else ''
-    return title
-
-
-def _split_headings(md_string):
+def _split_sections(md_string):
     '''splits a markdown string into sections of headings of the highest level
     found. Returns a list of strings representing each section. The newlines
     between sections are stripped.
@@ -105,14 +87,3 @@ def _split_content(md_string):
     result['content'] = result['content'].strip()
 
     return result
-
-
-if __name__ == '__main__':
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--path', '-p', required=True)
-    args = parser.parse_args()
-
-    result = (parse_markdown(args.path))
-    print(result)
