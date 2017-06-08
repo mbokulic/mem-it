@@ -6,12 +6,14 @@ import logging
 import re
 import os
 import json
-import memit.markdown_parser.Chunk as ch
+
 
 log = logging.getLogger('memit.markdown_parser')
 
 
 class Section():
+
+    VALID_EXT = ('.md', '.mdown', '.txt')
 
     def __init__(self, title, content, children):
         self.title = title
@@ -35,7 +37,7 @@ class Section():
         recursively for all children
         '''
         if self.children:
-            children = [ch.to_dict() for ch in self.children]
+            children = [child.to_dict() for child in self.children]
         else:
             children = None
         dict_repr = {
@@ -66,6 +68,27 @@ class Section():
         title, rest = cls._split_title(md_string)
         content, rest = cls._split_content(rest)
         children = cls._get_children(rest)
+        return cls(title, content, children)
+
+    @classmethod
+    def from_dir(cls, path):
+        '''creates a Section from a directory.
+        '''
+        title = os.path.basename(re.sub('/$', '', path))
+        content = ''
+
+        children = []
+        for child in os.listdir(path):
+            # ignore hidden files
+            if child.startswith('.'):
+                continue
+            child_path = os.path.join(path, child)
+            if os.path.isfile(child_path) and \
+                    child_path.endswith(cls.VALID_EXT):
+                if cls.file_is_markdown(child_path):
+                    children.append(cls.from_file(child_path))
+            elif os.path.isdir(child_path):
+                children.append(cls.from_dir(child_path))
         return cls(title, content, children)
 
     @classmethod
@@ -139,18 +162,35 @@ class Section():
         '''returns int representing the lowest heading found in the markdown
         string
         '''
-        headings = re.findall(pattern='\n#+.*\n|^#+.*\n', string=md_string)
+        headings = re.findall(pattern='\n#+.*\n|^#+.*\n|^#+.*$',
+                              string=md_string)
         counts = [len(re.search('#+', h).group()) for h in headings]
         return(min(counts))
+
+    @staticmethod
+    def file_is_markdown(path):
+        is_markdown = False
+        with open(path, 'r') as file:
+            for line in file:
+                if line.startswith('#'):
+                    is_markdown = True
+                    break
+        return is_markdown
 
 
 if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--path', '-p', required=True)
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--filepath', '-f')
+    group.add_argument('--dir', '-d')
     args = parser.parse_args()
 
-    result = Section.from_file(args.path)
+    if args.filepath:
+        result = Section.from_file(args.filepath)
+    elif args.dir:
+        result = Section.from_dir(args.dir)
+
     result = result.to_JSON()
     print(result)
