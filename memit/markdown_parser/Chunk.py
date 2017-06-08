@@ -11,38 +11,59 @@ import abc
 class Chunk(abc.ABC):
 
     @abc.abstractmethod
-    def __str__(self):
-        pass
-
-    @abc.abstractmethod
     def to_JSON(self):
         pass
 
-    @classmethod
     @abc.abstractmethod
-    def test(cls, string):
+    def get_content(self):
+        pass
+
+    @abc.abstractmethod
+    def get_prompt(self):
+        pass
+
+    @abc.abstractmethod
+    def get_title(self):
         pass
 
 
 class Code_chunk(Chunk):
 
-    _regexp = '\\n```[A-z]+\\n.+\\n```\\n'
+    _regexp = '```([A-z]+)?\\n.+\\n```'
+    _prompt_break = '```'
 
-    def __init__(self, string):
-        self.string = string
-        self.code = self._extract_code(string)
+    def __init__(self, content_string, title):
+        self._extract(content_string)
+        self.title = title
 
-    def __str__(self):
-        return self.string
+    def get_content(self):
+        return self.code
 
-    def _extract_code(self, string):
+    def get_syntax(self):
+        return self.syntax
+
+    def get_title(self):
+        return self.title
+
+    def get_prompt(self):
+        return self.prompt or '--no prompt for this chunk--'
+
+    def _extract(self, string):
         code = re.search(self._regexp, string, re.DOTALL)
+        prompt = ''
         if code:
             code = code.group()
+            syntax = re.search('```([A-z]+)?\\n', code)
+            self.syntax = syntax.group(1) or None
             code = re.sub('```([A-z]+)?\\n', '', code)
-        else:
-            code = ''
-        return code
+            code = re.sub('```', '', code)
+            code = code.strip()
+
+            prompt_break = re.search(self._prompt_break, string)
+            prompt = string[:prompt_break.start()].strip()
+
+        self.prompt = prompt or None
+        self.code = code or None
 
     @classmethod  # why do I need to repeat this?
     def test(cls, string):
@@ -54,3 +75,11 @@ class Code_chunk(Chunk):
             'code': self.code,
             'syntax': 'python'
         }
+
+
+def chunk_factory(string, title, chunk_type):
+
+    if chunk_type == 'code':
+        return Code_chunk(string, title)
+    else:
+        raise ValueError('unknown chunk type!')
