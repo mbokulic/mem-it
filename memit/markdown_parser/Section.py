@@ -6,7 +6,7 @@ import logging
 import re
 import os
 import json
-
+import memit.markdown_parser.Chunk as ch
 
 log = logging.getLogger('memit.markdown_parser')
 
@@ -17,6 +17,15 @@ class Section():
         self.title = title
         self.content = content
         self.children = children
+
+    def get_content(self):
+        return self.content
+
+    def get_title(self):
+        return self.title
+
+    def get_children(self):
+        return self.children
 
     def to_JSON(self):
         return json.dumps(self.to_dict())
