@@ -1,4 +1,5 @@
 import npyscreen as nps
+import argparse
 import memit.topic_choice as tc
 from memit.markdown_parser.Section import Section
 
@@ -12,18 +13,28 @@ def form_factory(title, text):
 class App(nps.NPSAppManaged):
     STARTING_FORM = 'topic_choice'
 
-    def __init__(self, chunk_type, **kwargs):
+    def __init__(self,
+                 dirpath=None,
+                 filepath=None,
+                 nr_chunks=20,
+                 chunk_type='code',
+                 **kwargs):
         super().__init__(**kwargs)
+
+        self.dirpath = dirpath
+        self.filepath = filepath
+        self.nr_chunks = nr_chunks
         self.chunk_type = chunk_type
 
-    def _init_tree(self):
-        filepath = 'test/data/test.md'
-        section = Section.from_file(filepath)
-        tree = tc.Chunk_tree.from_node(section, self.chunk_type)
-        return tree
-
     def onStart(self):
-        tree = self._init_tree()
+        if self.dirpath:
+            section = Section.from_dir(self.dirpath)
+        elif self.filepath:
+            section = Section.from_file(self.filepath)
+        else:
+            raise ValueError('App needs a directory or filepath!')
+
+        tree = tc.Chunk_tree.from_node(section, self.chunk_type)
         self.tree_choices = self.addForm(
             'topic_choice', tc.Chunk_choice_form, tree)
 
@@ -61,4 +72,15 @@ class App(nps.NPSAppManaged):
 
 
 if __name__ == '__main__':
-    app = App('code').run()
+    parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--filepath', '-f', default=None)
+    group.add_argument('--dirpath', '-d', default=None)
+    args = parser.parse_args()
+
+    if args.filepath:
+        content = Section.from_file(args.filepath)
+    elif args.dirpath:
+        content = Section.from_dir(args.dirpath)
+
+    app = App(args.dirpath, args.filepath).run()
