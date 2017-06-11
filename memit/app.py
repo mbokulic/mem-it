@@ -6,7 +6,7 @@ from memit.markdown_parser.Section import Section
 
 def form_factory(title, text):
     form = nps.Form(name=title)
-    form.add(nps.Pager, values=text)
+    form.add(nps.Pager, values=text, autowrap=True)
     return form
 
 
