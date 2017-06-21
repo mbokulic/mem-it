@@ -1,5 +1,6 @@
 import npyscreen as nps
 import argparse
+import random
 import memit.topic_choice as tc
 from memit.markdown_parser.Section import Section
 
@@ -44,6 +45,8 @@ class App(nps.NPSAppManaged):
         if last_form == 'topic_choice':
             # this means topic choice is finished
             self.chunks = self.tree_choices.get_values()
+            random.shuffle(self.chunks)
+            self.chunks = self.chunks[:self.nr_chunks]
             self.show_prompt()
         elif last_form == 'show_prompt':
             self.removeForm('show_prompt')
@@ -76,6 +79,7 @@ if __name__ == '__main__':
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--filepath', '-f', default=None)
     group.add_argument('--dirpath', '-d', default=None)
+    parser.add_argument('--nr_chunks', '-n', type=int)
     args = parser.parse_args()
 
     if args.filepath:
@@ -83,4 +87,7 @@ if __name__ == '__main__':
     elif args.dirpath:
         content = Section.from_dir(args.dirpath)
 
-    app = App(args.dirpath, args.filepath).run()
+    if args.nr_chunks:
+        app = App(args.dirpath, args.filepath, nr_chunks=args.nr_chunks).run()
+    else:
+        app = App(args.dirpath, args.filepath).run()
